@@ -232,7 +232,7 @@ public:
         idx = ghbEntry->prev;
       }
 
-        return count;
+      return count;
     }
 
     // Reset both IT and GHB state.
@@ -256,14 +256,24 @@ public:
   GHB_PC_CS ghbPcCs;
 
   // Prefetch parameters (from the lab pdf).
-  static constexpr int PREFETCH_DEGREE  = 6;  // n.
+  static constexpr int PREFETCH_DEGREE  = 6;  // n (max).
   static constexpr int PREFETCH_DISTANCE = 4; // l.
   static constexpr int HISTORY_LEN = 3;  // last 3 addresses to be checked.
+  static constexpr int MIN_PREFETCH_DEGREE = 1;
+  static constexpr int EPOCH_CYCLES = 1000;
 
   void prefetcher_initialize();
   // void prefetcher_branch_operate(champsim::address ip, uint8_t branch_type, champsim::address branch_target) {}
   uint32_t prefetcher_cache_operate(champsim::address addr, champsim::address ip, uint8_t cacheHit, bool usefulPrefetch, access_type type, uint32_t metadataIn);
   uint32_t prefetcher_cache_fill(champsim::address addr, long set, long way, uint8_t prefetch, champsim::address evictedAddr, uint32_t metadataIn);
-  //   void prefetcher_cycle_operate();
+  void prefetcher_cycle_operate();
   // void prefetcher_final_stats() {}
+
+private:
+  int currentPrefetchDegree = PREFETCH_DEGREE;
+  int epochCycleCounter = 0;
+  uint64_t epochPfIssued = 0;
+  uint64_t epochPfUseful = 0;
+
+  void update_prefetch_degree();
 };

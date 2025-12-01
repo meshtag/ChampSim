@@ -1,8 +1,18 @@
 #include "ghb_stride.h"
 
-#include "cache.h"
+#include <algorithm>
 
-void ghb_stride::prefetcher_initialize() { ghbPcCs.reset(); }
+#include "cache.h"
+#include "dpc_api.h"
+
+void ghb_stride::prefetcher_initialize()
+{
+  ghbPcCs.reset();
+  currentPrefetchDegree = PREFETCH_DEGREE;
+  epochCycleCounter = 0;
+  epochPfIssued = 0;
+  epochPfUseful = 0;
+}
 
 // Main prefetcher entry point for cache accesses.
 // addr: byte address accessed.
@@ -36,16 +46,20 @@ uint32_t ghb_stride::prefetcher_cache_operate(champsim::address addr, champsim::
   auto d = stride1;
 
   // Issue prefetches along the detected stride, offset by PREFETCH_DISTANCE.
-  for (int i = 0; i < PREFETCH_DEGREE; ++i) {
+  for (int i = 0; i < currentPrefetchDegree; ++i) {
     int64_t k = PREFETCH_DISTANCE + i;
 
     champsim::address pfAddress{champsim::block_number{lineAddr + k * d}};
 
     if (intern_->virtual_prefetch || champsim::page_number{pfAddress} == champsim::page_number{addr}) {
       const bool mshrUnderLightLoad = intern_->get_mshr_occupancy_ratio() < 0.5;
-      prefetch_line(pfAddress, mshrUnderLightLoad, 0);
+      if (prefetch_line(pfAddress, mshrUnderLightLoad, 0))
+        ++epochPfIssued;
     }
   }
+
+  if (usefulPrefetch)
+    ++epochPfUseful;
 
   return metadataIn;
 }
@@ -59,4 +73,47 @@ uint32_t ghb_stride::prefetcher_cache_operate(champsim::address addr, champsim::
 uint32_t ghb_stride::prefetcher_cache_fill(champsim::address addr, long set, long way, uint8_t prefetch, champsim::address evictedAddr, uint32_t metadataIn)
 {
   return metadataIn;
+}
+
+void ghb_stride::prefetcher_cycle_operate()
+{
+  if (++epochCycleCounter >= EPOCH_CYCLES) {
+    update_prefetch_degree();
+    epochCycleCounter = 0;
+    epochPfIssued = 0;
+    epochPfUseful = 0;
+  }
+}
+
+void ghb_stride::update_prefetch_degree()
+{
+  const double accuracyPct = intern_->sim_stats.pf_issued ? ((100 * intern_->sim_stats.pf_useful) / intern_->sim_stats.pf_issued) : 0;
+  const uint8_t bwPctRaw = get_dram_bw();
+  const uint32_t bwPct = (bwPctRaw * 100) / 16;
+
+  int delta = 0;
+  if (bwPct >= 90) {
+    if (accuracyPct >= 90.0)
+      delta = 0;
+    else if (accuracyPct >= 50.0)
+      delta = -1;
+    else
+      delta = -2;
+  } else if (bwPct >= 25) {
+    if (accuracyPct >= 90.0)
+      delta = 1;
+    else if (accuracyPct >= 50.0)
+      delta = 0;
+    else
+      delta = -1;
+  } else { // bwPct < 25
+    if (accuracyPct >= 90.0)
+      delta = 2;
+    else if (accuracyPct >= 50.0)
+      delta = 1;
+    else
+      delta = 0;
+  }
+
+  currentPrefetchDegree = std::clamp(currentPrefetchDegree + delta, MIN_PREFETCH_DEGREE, PREFETCH_DEGREE);
 }
