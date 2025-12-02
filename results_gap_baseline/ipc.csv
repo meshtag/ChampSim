@@ -1,1 +1,6 @@
 trace,ipc
+bc-0.trace,0.2063
+bc-12.trace,0.2011
+bfs-10.trace,0.2755
+bfs-14.trace,0.1961
+cc-13.trace,0.3273
