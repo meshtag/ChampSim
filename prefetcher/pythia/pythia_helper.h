@@ -44,6 +44,8 @@ public:
   uint32_t local_pc_sig;
   uint32_t local_offset_sig;
   bool is_high_bw;
+  bool is_high_row_conflict;
+  uint64_t row_conflicts;
 
   /* Add more states here */
 
@@ -58,6 +60,8 @@ public:
     local_pc_sig = 0;
     local_offset_sig = 0;
     is_high_bw = false;
+    is_high_row_conflict = false;
+    row_conflicts = 0;
   }
   State() { reset(); }
   ~State() {}

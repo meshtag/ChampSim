@@ -9,7 +9,17 @@
 
 #include "cache.h"
 #include "dpc_api.h"
+#include "dram_metrics.h"
 #include "pythia_params.h"
+
+#include <iostream>
+
+namespace
+{
+uint64_t g_last_row_conflicts_sample = 0;
+uint64_t g_row_conflict_sample_counter = 0;
+bool g_cached_high_row_conflict = false;
+}
 
 void pythia::prefetcher_initialize()
 {
@@ -53,6 +63,19 @@ uint32_t pythia::prefetcher_cache_operate(champsim::address addr, champsim::addr
   state->local_pc_sig = stentry->get_pc_sig();
   state->local_offset_sig = stentry->get_offset_sig();
   state->is_high_bw = is_high_bw(get_dram_bw());
+  // periodically sample row-conflict deltas to derive a binary signal
+  if (++g_row_conflict_sample_counter % PYTHIA::row_conflict_sample_period == 0) {
+    bool prev_flag = g_cached_high_row_conflict;
+    uint64_t curr = champsim::dram_metrics::row_conflicts();
+    uint64_t delta = curr - g_last_row_conflicts_sample;
+    g_cached_high_row_conflict = (delta >= PYTHIA::row_conflict_delta_thresh);
+    g_last_row_conflicts_sample = curr;
+    // if (g_cached_high_row_conflict != prev_flag) {
+      // std::cout << "[pythia] row_conflict flag " << (g_cached_high_row_conflict ? "ON" : "OFF") << " delta=" << delta << " total=" << curr << std::endl;
+    // }
+  }
+  state->row_conflicts = champsim::dram_metrics::row_conflicts();
+  state->is_high_row_conflict = g_cached_high_row_conflict;
 
   // generate prefetch predictions
   predict(address, page, offset, state, pref_addr);

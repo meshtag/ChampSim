@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Runs GAP traces and plots IPC for the selected prefetcher(s).
-# Usage: WARMUP=10000000 SIM=50000000 ./run_gap_baseline.sh -p pythia -p nopref
+# Usage: WARMUP=10000000 SIM=50000000 ./run_gap_baseline.sh [-r results_root] -p pythia -p nopref
 
 TRACE_DIR="traces/GAP"
 
@@ -10,7 +10,7 @@ WARMUP=${WARMUP:-10000000}
 SIM=${SIM:-50000000}
 
 usage() {
-  echo "Usage: $0 [-p|--prefetcher <name>]..."
+  echo "Usage: $0 [-r|--results-root <dir>] [-p|--prefetcher <name>]..."
   echo "Supported prefetchers: nopref, pythia, ip_stride, next_line, ghb_stride"
   exit 1
 }
@@ -27,8 +27,14 @@ prefetcher_config() {
 }
 
 PREFETCHERS=()
+RESULTS_ROOT="."
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    -r|--results-root)
+      [[ $# -ge 2 ]] || usage
+      RESULTS_ROOT="$2"
+      shift 2
+      ;;
     -p|--prefetcher)
       [[ $# -ge 2 ]] || usage
       PREFETCHERS+=("$2")
@@ -50,7 +56,7 @@ fi
 
 for PREFETCHER in "${PREFETCHERS[@]}"; do
   CONFIG="$(prefetcher_config "${PREFETCHER}")" || { echo "Unsupported prefetcher: ${PREFETCHER}"; usage; }
-  OUT_DIR="results_gap_${PREFETCHER}"
+  OUT_DIR="${RESULTS_ROOT}/results_gap_${PREFETCHER}"
   LOG_DIR="${OUT_DIR}/logs"
   CSV_FILE="${OUT_DIR}/ipc.csv"
 

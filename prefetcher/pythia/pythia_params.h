@@ -9,6 +9,7 @@
 #define __PYTHIA_PARAMS_H__
 
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -71,11 +72,15 @@ static const uint32_t max_actions = 64;
 static const uint32_t max_rewards = 16;
 static const uint32_t max_degree = 16;
 static const uint32_t max_dram_bw_levels = 16;
+// static const uint32_t row_conflict_sample_period = 1024; // sample interval (cache accesses) to check row-conflict delta
+static const uint32_t row_conflict_sample_period = 1024;
+static const uint32_t row_conflict_delta_thresh = 1024;    // row-conflict delta over the sampling window to qualify as "high"
 
 //----------------------------//
 // Reward framework
 //----------------------------//
 static const bool enable_hbw_reward = true;
+static const bool enable_hrc_reward = true; // treat high row conflicts similar to high bandwidth pressure for rewards
 static const uint32_t high_bw_thresh = 12;
 static const bool enable_reward_out_of_bounds = true;
 static const bool enable_reward_all = false; // can be deprecated

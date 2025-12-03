@@ -23,7 +23,8 @@ std::string State::to_string()
 {
   std::stringstream ss;
 
-  ss << std::hex << pc << std::dec << "|" << offset << "|" << delta;
+  ss << std::hex << pc << std::dec << "|" << offset << "|" << delta << "|" << (is_high_bw ? "hbw" : "lbw") << "|"
+     << (is_high_row_conflict ? "hrc" : "lrc") << "|rc" << row_conflicts;
 
   return ss.str();
 }

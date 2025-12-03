@@ -15,6 +15,7 @@
  */
 
 #include "dram_controller.h"
+#include "dram_metrics.h"
 
 #include <algorithm>
 #include <cfenv>
@@ -364,7 +365,12 @@ long DRAM_CHANNEL::service_packet(DRAM_CHANNEL::queue_type::iterator pkt)
     auto op_idx = bank_request_index(pkt->value().address);
 
     if (!bank_request[op_idx].valid && !bank_request[op_idx].under_refresh) {
-      bool row_buffer_hit = (bank_request[op_idx].open_row.has_value() && *(bank_request[op_idx].open_row) == op_row);
+      const bool has_open_row = bank_request[op_idx].open_row.has_value();
+      const bool row_buffer_hit = has_open_row && *(bank_request[op_idx].open_row) == op_row;
+      const bool row_conflict = has_open_row && !row_buffer_hit;
+      if (row_conflict) {
+        champsim::dram_metrics::record_row_conflict();
+      }
 
       // this bank is now busy
       auto row_charge_delay = champsim::chrono::clock::duration{bank_request[op_idx].open_row.has_value() ? tRP + tRCD : tRCD};

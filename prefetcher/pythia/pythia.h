@@ -43,7 +43,8 @@ private:
   std::vector<Scooby_PTEntry*> search_pt(uint64_t address, bool search_all = false);
   void track_in_st(uint64_t page, uint32_t pred_offset, int32_t pref_offset);
   void gen_multi_degree_pref(uint64_t page, uint32_t offset, int32_t action, uint32_t pref_degree, std::vector<uint64_t>& pref_addr);
-  uint32_t get_dyn_pref_degree(float max_to_avg_q_ratio, uint64_t page = 0xdeadbeef, int32_t action = 0); /* only implemented for CMAC engine 2.0 */
+  uint32_t get_dyn_pref_degree(float max_to_avg_q_ratio, uint64_t page = 0xdeadbeef, int32_t action = 0,
+                               bool high_row_conflict = false);
   int32_t getAction(uint32_t action_index);
   bool is_high_bw(uint8_t bw_level);
 

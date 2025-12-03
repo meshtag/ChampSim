@@ -79,7 +79,7 @@ uint32_t pythia::predict(uint64_t base_address, uint64_t page, uint32_t offset, 
 
   // select a prefetch degree
   if (PYTHIA::enable_dyn_degree) {
-    pref_degree = get_dyn_pref_degree(max_to_avg_q_ratio, page, Actions[action_index]);
+    pref_degree = get_dyn_pref_degree(max_to_avg_q_ratio, page, Actions[action_index], state->is_high_row_conflict);
   }
 
   MYLOG("act_idx %u act %d", action_index, Actions[action_index]);
@@ -194,11 +194,12 @@ bool pythia::track(uint64_t address, State* state, uint32_t action_index, Scooby
 // Computes the prefetch degree dynamically.
 // Should be called when Pythia makes a prediction.
 //----------------------------------------------------//
-uint32_t pythia::get_dyn_pref_degree(float max_to_avg_q_ratio, uint64_t page, int32_t action)
+uint32_t pythia::get_dyn_pref_degree(float max_to_avg_q_ratio, uint64_t page, int32_t action, bool high_row_conflict)
 {
   uint32_t counted = false;
   uint32_t degree = 1;
   bool high_bw = is_high_bw(get_dram_bw());
+  bool stressed = high_bw || high_row_conflict;
 
   auto st_index = find_if(signature_table.begin(), signature_table.end(), [page](Scooby_STEntry* stentry) { return stentry->page == page; });
   if (st_index != signature_table.end()) {
@@ -206,8 +207,8 @@ uint32_t pythia::get_dyn_pref_degree(float max_to_avg_q_ratio, uint64_t page, in
     bool found = (*st_index)->search_action_tracker(action, conf);
     std::vector<int32_t> conf_thresholds, deg_normal;
 
-    conf_thresholds = high_bw ? PYTHIA::last_pref_offset_conf_thresholds_hbw : PYTHIA::last_pref_offset_conf_thresholds;
-    deg_normal = high_bw ? PYTHIA::dyn_degrees_type2_hbw : PYTHIA::dyn_degrees_type2;
+    conf_thresholds = stressed ? PYTHIA::last_pref_offset_conf_thresholds_hbw : PYTHIA::last_pref_offset_conf_thresholds;
+    deg_normal = stressed ? PYTHIA::dyn_degrees_type2_hbw : PYTHIA::dyn_degrees_type2;
 
     if (found) {
       for (uint32_t index = 0; index < conf_thresholds.size(); ++index) {
@@ -385,20 +386,22 @@ void pythia::assign_reward(Scooby_PTEntry* ptentry, RewardType type)
 int32_t pythia::compute_reward(Scooby_PTEntry* ptentry, RewardType type)
 {
   bool high_bw = (PYTHIA::enable_hbw_reward && is_high_bw(get_dram_bw())) ? true : false;
+  bool high_rc = (PYTHIA::enable_hrc_reward && ptentry->state && ptentry->state->is_high_row_conflict) ? true : false;
+  bool stressed = high_bw || high_rc;
   int32_t reward = 0;
 
-  stats.reward.compute_reward.dist[type][high_bw]++;
+  stats.reward.compute_reward.dist[type][stressed]++;
 
   if (type == RewardType::correct_timely) {
-    reward = high_bw ? PYTHIA::reward_hbw_correct_timely : PYTHIA::reward_correct_timely;
+    reward = stressed ? PYTHIA::reward_hbw_correct_timely : PYTHIA::reward_correct_timely;
   } else if (type == RewardType::correct_untimely) {
-    reward = high_bw ? PYTHIA::reward_hbw_correct_untimely : PYTHIA::reward_correct_untimely;
+    reward = stressed ? PYTHIA::reward_hbw_correct_untimely : PYTHIA::reward_correct_untimely;
   } else if (type == RewardType::incorrect) {
-    reward = high_bw ? PYTHIA::reward_hbw_incorrect : PYTHIA::reward_incorrect;
+    reward = stressed ? PYTHIA::reward_hbw_incorrect : PYTHIA::reward_incorrect;
   } else if (type == RewardType::none) {
-    reward = high_bw ? PYTHIA::reward_hbw_none : PYTHIA::reward_none;
+    reward = stressed ? PYTHIA::reward_hbw_none : PYTHIA::reward_none;
   } else if (type == RewardType::out_of_bounds) {
-    reward = high_bw ? PYTHIA::reward_hbw_out_of_bounds : PYTHIA::reward_out_of_bounds;
+    reward = stressed ? PYTHIA::reward_hbw_out_of_bounds : PYTHIA::reward_out_of_bounds;
   } else {
     std::cout << "Invalid reward type found " << type << std::endl;
     assert(false);
