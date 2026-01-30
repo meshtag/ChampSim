@@ -6,6 +6,8 @@ _configuration.mk
 
 bin/
 
+traces/
+
 **/*.o
 **/*.d
 
@@ -30,3 +32,5 @@ compile_commands.json
 
 .vscode/
 **/.DS_Store
+.venv/
+.matplotlib-cache/

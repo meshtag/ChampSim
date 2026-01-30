@@ -1,0 +1,15 @@
+trace,ipc
+bc-0.trace.gz,0.2189
+bc-12.trace.gz,0.2005
+bfs-10.trace.gz,0.6168
+bfs-14.trace.gz,0.4753
+cc-13.trace.gz,0.3914
+cc-14.trace.gz,0.4466
+cc-5.trace.gz,0.5021
+charlie_0000.champsim.gz,1.139
+charlie_0001.champsim.gz,1.348
+charlie_0002.champsim.gz,0.7542
+charlie_0003.champsim.gz,0.9175
+charlie_0004.champsim.gz,0.8514
+sssp-10.trace.gz,0.5784
+sssp-14.trace.gz,0.5876

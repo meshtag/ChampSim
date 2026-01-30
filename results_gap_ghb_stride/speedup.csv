@@ -1,0 +1,15 @@
+trace,speedup
+bc-12.trace.gz,1.0771
+bfs-10.trace.gz,1.5953
+bfs-14.trace.gz,1.8399
+cc-13.trace.gz,1.2811
+cc-14.trace.gz,1.3072
+cc-5.trace.gz,1.3276
+charlie_0000.champsim.gz,1.1584
+charlie_0001.champsim.gz,1.2352
+charlie_0002.champsim.gz,1.1034
+charlie_0003.champsim.gz,1.1000
+charlie_0004.champsim.gz,1.1085
+sssp-10.trace.gz,1.3898
+sssp-14.trace.gz,1.4067
+GEOMEAN,1.2865

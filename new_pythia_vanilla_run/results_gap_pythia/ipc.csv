@@ -1,0 +1,10 @@
+trace,ipc
+bc-0.trace.gz,0.2189
+bc-12.trace,0.2005
+bfs-10.trace,0.6168
+bfs-14.trace,0.4753
+cc-13.trace,0.3914
+cc-14.trace.gz,0.4466
+cc-5.trace.gz,0.5021
+sssp-10.trace.gz,0.5784
+sssp-14.trace.gz,0.5876
